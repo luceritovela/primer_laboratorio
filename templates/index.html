@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Usuarios</title>
+</head>
+<body>
+    <h2>Lista de Usuarios</h2>
+    <ul id="lista-usuarios">
+        {% for usuario in usuarios %}
+            <li id="usuario-{{ usuario.id }}">
+                {{ usuario.id }} - {{ usuario.nombre }}
+                <button onclick="eliminarUsuario({{ usuario.id }})">❌ Eliminar</button>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h3>Agregar Usuario</h3>
+    <input type="text" id="nombre" placeholder="Nombre del usuario">
+    <button onclick="agregarUsuario()">➕ Agregar</button>
+
+    <h3>Buscar Usuario por ID</h3>
+    <input type="number" id="buscar-id" placeholder="ID del usuario">
+    <button onclick="buscarUsuario()">🔍 Buscar</button>
+
+    <script>
+        function agregarUsuario() {
+            let nombre = document.getElementById("nombre").value;
+            if (!nombre.trim()) {
+                alert("⚠️ El nombre no puede estar vacío.");
+                return;
+            }
+
+            fetch('/usuarios', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ nombre: nombre })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.mensaje) {
+                    alert(`✅ ${data.mensaje}\n🆔 ID asignado: ${data.id}`);
+                    location.reload(); // Recargar para actualizar la lista
+                } else {
+                    alert(`❌ Error: ${data.error || "Desconocido"}`);
+                }
+            })
+            .catch(error => alert("❌ Error al conectar con el servidor."));
+        }
+
+        function eliminarUsuario(id) {
+            if (!confirm("⚠️ ¿Seguro que deseas eliminar este usuario?")) return;
+
+            fetch(`/usuarios/${id}`, { method: 'DELETE' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.mensaje) {
+                    alert(`✅ ${data.mensaje}`);
+                    document.getElementById(`usuario-${id}`).remove(); // Elimina el usuario de la lista sin recargar
+                } else {
+                    alert(`❌ Error: ${data.error || "Desconocido"}`);
+                }
+            })
+            .catch(error => alert("❌ Error al conectar con el servidor."));
+        }
+
+        function buscarUsuario() {
+            let id = document.getElementById("buscar-id").value;
+            if (!id) {
+                alert("⚠️ Debes ingresar un ID.");
+                return;
+            }
+
+            fetch(`/usuarios/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    alert(`🔍 Usuario encontrado:\n🆔 ID: ${data.id}\n👤 Nombre: ${data.nombre}`);
+                } else {
+                    alert(`❌ ${data.error || "Usuario no encontrado"}`);
+                }
+            })
+            .catch(error => alert("❌ Error al conectar con el servidor."));
+        }
+    </script>
+
+    <a href="/logout">Cerrar sesión</a>
+</body>
+</html>
